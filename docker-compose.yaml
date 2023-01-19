@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  database:
+    container_name: postgres_container
+    image: 'postgres:14'
+    environment:
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: '123456'
+      POSTGRES_DB: postgres
+      PG_DATA: /var/lib/postgresql/data
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+
+  cache:
+    image: redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./cache:/data
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
