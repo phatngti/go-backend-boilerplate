@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"phatngti/boilerplate/database"
@@ -21,21 +20,6 @@ type ProductEntity struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 	DeletedAt *sql.NullTime `json:"deleted_at,omitempty"`
-}
-
-func (p ProductEntity) ToEntity() ProductEntity {
-	return p
-}
-
-func (p ProductEntity) FromEntity(product ProductEntity) interface{} {
-	return ProductEntity{
-		Name: product.Name,
-		Weight: product.Weight,
-		ID: product.ID,
-		CreatedAt: product.CreatedAt,
-		UpdatedAt: product.UpdatedAt,
-		DeletedAt: product.DeletedAt,
-	}
 }
 
 func (p ProductEntity)AuditEntity(isDeleted bool) ProductEntity {
@@ -56,8 +40,8 @@ func (p ProductEntity)AuditEntity(isDeleted bool) ProductEntity {
 	return p
 }
 
-func CreateRepository[E any](db *gorm.DB) *PSqlRepository[E,E] {
-	repo := NewRepository[E,E](db)
+func CreateRepository[E any](db *gorm.DB) *PSqlRepository[E] {
+	repo := NewRepository[E](db)
 	return repo
 }
 
@@ -94,8 +78,7 @@ func TestMain(m *testing.M){
 func TestGetOne(t *testing.T) {
 	db := getDB()
 	ctx := context.Background()
-	productRepo := NewRepository[ProductEntity, ProductEntity](db)
-	fmt.Println("productrepo: ", &productRepo)
+	productRepo := CreateRepository[ProductEntity](db)
 	criteria := CreateCriteria(&ProductEntity{
 		Name: "abc",
 	})
@@ -103,23 +86,35 @@ func TestGetOne(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	t.Log("data: ", data)
+	t.Log("data: ", data.Name)
 }
 
-// func TestInsert(t *testing.T) {
-// 	db := getDB()
-// 	ctx := context.Background()
-// 	productRepo := NewRepository[ProductEntity, ProductEntity](db)
-// 	product := ProductEntity{
-// 		Name: "abc",
-// 		Weight: 8,
-// 	}.AuditEntity(true)
-// 	t.Log(product)
-// 	err := productRepo.Insert(ctx, &product)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// }
+func TestGetAll(t *testing.T) {
+	db := getDB()
+	ctx := context.Background()
+	productRepo := CreateRepository[ProductEntity](db)
+	datas, err := productRepo.GetAll(ctx, nil)
+	if err != nil {
+		panic(err)
+	}
+	t.Log("datas: ", datas)
+}
+
+func TestInsert(t *testing.T) {
+	db := getDB()
+	ctx := context.Background()
+	productRepo := CreateRepository[ProductEntity](db)
+	product := ProductEntity{
+		Name: "abcxyz",
+		Weight: 100,
+	}.AuditEntity(true)
+	t.Log(product)
+	data, err := productRepo.Insert(ctx, &product)
+	if err != nil {
+		panic(err)
+	}
+	t.Log("data: ", data)
+}
 
 // func TestFindOneAndUpdate(t *testing.T) {
 // 	db := getDB()
