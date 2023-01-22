@@ -74,6 +74,22 @@ func(r *PSqlRepository[E]) FindOneOrInsert(ctx context.Context, criteria map[str
 	return model, nil
 }
 
+func (r *PSqlRepository[E]) UpdateById(ctx context.Context, id uint, entity *E ) (E, error) {
+	err := r.db.WithContext(ctx).Where("id = ?", id).Updates(entity).Error
+	if err != nil {
+		return *new(E), err
+	}
+	return *entity, nil
+}
+
+func (r *PSqlRepository[E]) Update(ctx context.Context, entity *E, newData *E) (E, error) {
+	err := r.db.WithContext(ctx).Model(&entity).Updates(newData).Error
+	if err != nil {
+		return *new(E), err
+	}
+	return *entity, nil
+}
+
 func(r *PSqlRepository[E]) FindOneAndUpdate(ctx context.Context, criteria map[string]interface{}, entity *E) (E, error) {
 	var model E
 	var err error
@@ -89,22 +105,46 @@ func(r *PSqlRepository[E]) FindOneAndUpdate(ctx context.Context, criteria map[st
 	return model, nil
 }
 
-func(r *PSqlRepository[E]) FindOneAndUpdateOrInsert(ctx context.Context, criteria map[string]interface{}, data UpdateOrInsert[E]){
+func(r *PSqlRepository[E]) FindOneAndUpdateOrInsert(ctx context.Context, criteria map[string]interface{}, data UpdateOrInsert[E]) (E, error){
+	// Get record by criteria
+	var record E
+	var err error
+	record, err = r.GetOne(ctx, criteria)
 
+	if err != nil && err.Error() != RecordNotFound {
+		return *new(E), err
+	}
+	if err != nil && err.Error() == RecordNotFound {
+		if data.newData != nil {
+			record, err := r.Insert(ctx, data.newData)
+			if err != nil {
+				return *new(E), err
+			}
+			return record, nil
+		}
+	}
+	if data.replaceData != nil {
+		updateRecord, err := r.Update(ctx, &record, data.replaceData)
+		if err != nil {
+			return *new(E), err
+		}
+		return updateRecord, nil
+	}
+	return record, nil
 }
 
-func(r *PSqlRepository[E]) FindManyAndUpdate() {
+// func(r *PSqlRepository[E]) FindManyAndUpdate() {
 
-}
+// } // Update with batch -> Later
 
-func(r *PSqlRepository[E]) FindManyAndUpdateOrInsert() {
+// func(r *PSqlRepository[E]) FindManyAndUpdateOrInsert() {
 
-}
+// } // Update with batch -> Later
 
-func(r *PSqlRepository[E]) SortDelete() {
-
-}
-
-func(r *PSqlRepository[E]) HardDelete() {
-
+func(r *PSqlRepository[E]) Delete(entity *E) (error) {
+	err := r.db.Delete(entity).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }

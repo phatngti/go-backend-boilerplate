@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"log"
 	"os"
@@ -19,25 +18,31 @@ type ProductEntity struct {
 	Weight 		uint `gorm:"column:weight" json:"weight,omitempty"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
-	DeletedAt *sql.NullTime `json:"deleted_at,omitempty"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty"`
 }
 
-func (p ProductEntity)AuditEntity(isDeleted bool) ProductEntity {
-	date := time.Now().UTC()
-	deletedDate := sql.NullTime{
-		Time: time.Now(),
-		Valid: false,
+// Hooks
+
+func (p *ProductEntity) BeforeCreate(tx *gorm.DB) (error) {
+	now := time.Now().UTC()
+	p.CreatedAt = &now
+	p.UpdatedAt = &now
+	return nil
+}
+
+func (p *ProductEntity) BeforeUpdate(tx *gorm.DB) (error) {
+	now := time.Now().UTC()
+	p.UpdatedAt = &now
+	return nil
+}
+
+func (p *ProductEntity) BeforeDelete(tx *gorm.DB) (error) {
+	now := time.Now().UTC()
+	err := tx.Model(&ProductEntity{}).Where("id = ?", p.ID).Update("updated_at", &now).Error
+	if err != nil {
+		return err
 	}
-	if isDeleted {
-		deletedDate = sql.NullTime{
-			Time: date,
-			Valid: true,
-		}
-	}
-	p.CreatedAt = &date
-	p.UpdatedAt = &date
-	p.DeletedAt = &deletedDate
-	return p
+	return nil
 }
 
 func CreateRepository[E any](db *gorm.DB) *PSqlRepository[E] {
@@ -45,7 +50,7 @@ func CreateRepository[E any](db *gorm.DB) *PSqlRepository[E] {
 	return repo
 }
 
-func MarshalEntity[E any](e *E) map[string]interface{} {
+func MarshalJSON[E any](e *E) map[string]interface{} {
 	var inInf map[string]interface{}
 	eMarshal, _ := json.Marshal(e)
 	json.Unmarshal(eMarshal, &inInf)
@@ -53,10 +58,8 @@ func MarshalEntity[E any](e *E) map[string]interface{} {
 }
 
 func CreateCriteria[E any](entity *E) map[string]interface{} {
-	return MarshalEntity(entity)
+	return MarshalJSON(entity)
 }
-
-
 
 func getDB() (*gorm.DB) {
 	database := new(database.Database)
@@ -89,6 +92,18 @@ func TestGetOne(t *testing.T) {
 	t.Log("data: ", data.Name)
 }
 
+func TestGetOneById(t *testing.T) {
+	db := getDB()
+	ctx := context.Background()
+	productRepo := CreateRepository[ProductEntity](db)
+
+	data, err := productRepo.GetOneById(ctx, 10)
+	if err != nil {
+		panic(err)
+	}
+	t.Log("data: ",data)
+}
+
 func TestGetAll(t *testing.T) {
 	db := getDB()
 	ctx := context.Background()
@@ -107,7 +122,7 @@ func TestInsert(t *testing.T) {
 	product := ProductEntity{
 		Name: "abcxyz",
 		Weight: 100,
-	}.AuditEntity(true)
+	}
 	t.Log(product)
 	data, err := productRepo.Insert(ctx, &product)
 	if err != nil {
@@ -116,34 +131,61 @@ func TestInsert(t *testing.T) {
 	t.Log("data: ", data)
 }
 
-// func TestFindOneAndUpdate(t *testing.T) {
-// 	db := getDB()
-// 	ctx := context.Background()
-// 	productRepo := NewRepository[ProductEntity, ProductEntity](db)
-// 	newData := ProductEntity{
-// 		Name: "phat ngt123",
-// 	}
-// 	criteria := CreateCriteria(&ProductEntity{
-// 		Name: "abc",
-// 	})
+func TestFindOneAndUpdate(t *testing.T) {
+	db := getDB()
+	ctx := context.Background()
+	productRepo := CreateRepository[ProductEntity](db)
+	newData := ProductEntity{
+		Name: "phat ngt123",
+	}
+	criteria := CreateCriteria(&ProductEntity{
+		Name: "abcxyz",
+	})
 
-// 	newProduct, err := productRepo.FindOneAndUpdate(ctx, criteria, &newData)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	t.Log("new product: ", newProduct)
-// }
+	newProduct, err := productRepo.FindOneAndUpdate(ctx, criteria, &newData)
+	if err != nil {
+		panic(err)
+	}
+	t.Log("new product: ", newProduct)
+}
 
-// func TestFindOneAndUpdateOrInsert(t *testing.T) {
-// 	db := getDB()
-// 	ctx := context.Background()
-// 	productRepo := NewRepository[ProductEntity,ProductEntity](db)
-// 	criteria := &ProductCriteria{
-// 		name: "abc",
-// 	}
+func TestFindOneAndUpdateOrInsert(t *testing.T) {
+	db := getDB()
+	ctx := context.Background()
+	productRepo := CreateRepository[ProductEntity](db)
+	criteria := CreateCriteria(&ProductEntity{
+		Name: "test 2023",
+	})
 
-// 	newData := ProductEntity{
-// 		Name: "Phat Ng",
-// 	}
+	updateOrInsertData := UpdateOrInsert[ProductEntity]{
+		replaceData: &ProductEntity{
+			Name: "test updated 2023",
+		},
+		newData: &ProductEntity{
+			Name: "test 2023",
+			Weight: 1000,
+		},
+	}
+	data, err := productRepo.FindOneAndUpdateOrInsert(ctx, criteria, updateOrInsertData)
+	if err != nil {
+		panic(err)
+	}
+	t.Log("data: ", data)
 
-// }
+}
+
+func TestDelete(t *testing.T) {
+	db := getDB()
+	ctx := context.Background()
+	productRepo := CreateRepository[ProductEntity](db)
+
+	record , err := productRepo.GetOneById(ctx, 16)
+	if err != nil {
+		panic(err)
+	}
+
+	err = productRepo.Delete(&record)
+	if err != nil {
+		panic(err)
+	}
+}
