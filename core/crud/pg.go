@@ -141,8 +141,8 @@ func(r *PSqlRepository[E]) FindOneAndUpdateOrInsert(ctx context.Context, criteri
 
 // } // Update with batch -> Later
 
-func(r *PSqlRepository[E]) Delete(entity *E) (error) {
-	err := r.db.Delete(entity).Error
+func(r *PSqlRepository[E]) Delete(ctx context.Context, entity *E) (error) {
+	err := r.db.WithContext(ctx).Delete(entity).Error
 	if err != nil {
 		return err
 	}

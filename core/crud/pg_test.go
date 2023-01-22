@@ -13,30 +13,30 @@ import (
 )
 
 type ProductEntity struct {
-	ID        uint `gorm:"primarykey" json:"id,omitempty"`
-	Name 			string `gorm:"column:name" json:"name,omitempty"`
-	Weight 		uint `gorm:"column:weight" json:"weight,omitempty"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	ID        uint           `gorm:"primarykey" json:"id,omitempty"`
+	Name      string         `gorm:"column:name" json:"name,omitempty"`
+	Weight    uint           `gorm:"column:weight" json:"weight,omitempty"`
+	CreatedAt *time.Time     `json:"created_at,omitempty"`
+	UpdatedAt *time.Time     `json:"updated_at,omitempty"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty"`
 }
 
 // Hooks
 
-func (p *ProductEntity) BeforeCreate(tx *gorm.DB) (error) {
+func (p *ProductEntity) BeforeCreate(tx *gorm.DB) error {
 	now := time.Now().UTC()
 	p.CreatedAt = &now
 	p.UpdatedAt = &now
 	return nil
 }
 
-func (p *ProductEntity) BeforeUpdate(tx *gorm.DB) (error) {
+func (p *ProductEntity) BeforeUpdate(tx *gorm.DB) error {
 	now := time.Now().UTC()
 	p.UpdatedAt = &now
 	return nil
 }
 
-func (p *ProductEntity) BeforeDelete(tx *gorm.DB) (error) {
+func (p *ProductEntity) BeforeDelete(tx *gorm.DB) error {
 	now := time.Now().UTC()
 	err := tx.Model(&ProductEntity{}).Where("id = ?", p.ID).Update("updated_at", &now).Error
 	if err != nil {
@@ -61,14 +61,14 @@ func CreateCriteria[E any](entity *E) map[string]interface{} {
 	return MarshalJSON(entity)
 }
 
-func getDB() (*gorm.DB) {
+func getDB() *gorm.DB {
 	database := new(database.Database)
 	dns := "postgresql://postgres:123456@127.0.0.1:5432/postgres"
 	database.InitPSql(dns)
 	db := database.GetPSqlDB()
 	return db
 }
-func TestMain(m *testing.M){
+func TestMain(m *testing.M) {
 	db := getDB()
 	err := db.AutoMigrate(ProductEntity{})
 	if err != nil {
@@ -85,7 +85,7 @@ func TestGetOne(t *testing.T) {
 	criteria := CreateCriteria(&ProductEntity{
 		Name: "abc",
 	})
-	data, err := productRepo.GetOne(ctx,criteria)
+	data, err := productRepo.GetOne(ctx, criteria)
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +101,7 @@ func TestGetOneById(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	t.Log("data: ",data)
+	t.Log("data: ", data)
 }
 
 func TestGetAll(t *testing.T) {
@@ -120,7 +120,7 @@ func TestInsert(t *testing.T) {
 	ctx := context.Background()
 	productRepo := CreateRepository[ProductEntity](db)
 	product := ProductEntity{
-		Name: "abcxyz",
+		Name:   "abcxyz",
 		Weight: 100,
 	}
 	t.Log(product)
@@ -162,7 +162,7 @@ func TestFindOneAndUpdateOrInsert(t *testing.T) {
 			Name: "test updated 2023",
 		},
 		newData: &ProductEntity{
-			Name: "test 2023",
+			Name:   "test 2023",
 			Weight: 1000,
 		},
 	}
@@ -179,12 +179,12 @@ func TestDelete(t *testing.T) {
 	ctx := context.Background()
 	productRepo := CreateRepository[ProductEntity](db)
 
-	record , err := productRepo.GetOneById(ctx, 16)
+	record, err := productRepo.GetOneById(ctx, 16)
 	if err != nil {
 		panic(err)
 	}
 
-	err = productRepo.Delete(&record)
+	err = productRepo.Delete(ctx, &record)
 	if err != nil {
 		panic(err)
 	}

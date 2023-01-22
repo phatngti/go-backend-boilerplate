@@ -13,10 +13,10 @@ import (
 
 type Database struct {
 	postgresDb *gorm.DB
-	mongoDb *mongo.Client
+	mongoDb    *mongo.Client
 }
 
-func(x *Database) InitPSql(dns string) {
+func (x *Database) InitPSql(dns string) {
 	db, err := connectPSqlDB(dns)
 	if err != nil {
 		panic(err)
@@ -25,7 +25,7 @@ func(x *Database) InitPSql(dns string) {
 	return
 }
 
-func (x *Database) InitMongo(dns string){
+func (x *Database) InitMongo(dns string) {
 	client, err := connectMongoDB(dns)
 	if err != nil {
 		panic(err)
@@ -42,7 +42,7 @@ func (x *Database) InitMongo(dns string){
 	return
 }
 
-func connectPSqlDB(dns string) ( *gorm.DB, error ){
+func connectPSqlDB(dns string) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(dns), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect postgres db")
@@ -61,10 +61,10 @@ func connectMongoDB(dataSourceName string) (*mongo.Client, error) {
 	return client, nil
 }
 
-func (x Database) GetPSqlDB() (*gorm.DB) {
+func (x Database) GetPSqlDB() *gorm.DB {
 	return x.postgresDb
 }
 
-func (x Database) GetMongoDB() (*mongo.Client) {
+func (x Database) GetMongoDB() *mongo.Client {
 	return x.mongoDb
 }
