@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 	"phatngti/boilerplate/database"
-	"phatngti/boilerplate/models"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func initDatabase() *database.Database {
@@ -32,12 +32,17 @@ func main() {
 	}
 
 	// Init database and models
-	database := initDatabase()
-	fmt.Println("database: ", database)
-	if database.GetPSqlDB() != nil {
-		models := new(models.Models)
-		models.InitModels(database)
-	}
+	// database := initDatabase()
+	// fmt.Println("database: ", database)
+	// if database.GetPSqlDB() != nil {
+	// 	models := new(models.Models)
+	// 	models.InitModels(database)
+	// }
+	var compoundIndex bson.D
+	fmt.Println("compoundIndex: ", compoundIndex)
+
+	fmt.Println("print bson: ", bson.D{{Key: "test", Value: 123}, {Key: "abc", Value: 456}})
+	fmt.Println("print bson: ", bson.D{{Key: "test", Value: 123}, {Key: "abc", Value: 456}})
 
 	// // Start default gin server
 	// server := gin.Default()

@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	"log"
 	core "phatngti/boilerplate/core/crud"
 	"phatngti/boilerplate/database"
 )
@@ -17,6 +19,10 @@ func (m *Models) InitModels(db *database.Database) {
 	m.user = user
 }
 
-func (m Models) GetModels() *Models {
-	return &m
+func (m *Models) GetModels() (*Models, error) {
+	if m == nil {
+		log.Fatal("Cannot init models")
+		return nil, fmt.Errorf("models cannot initilized")
+	}
+	return m, nil
 }

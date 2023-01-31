@@ -1,10 +1,11 @@
-package core
+package core_crud_test
 
 import (
 	"context"
 	"encoding/json"
 	"log"
 	"os"
+	core "phatngti/boilerplate/core/crud"
 	"phatngti/boilerplate/database"
 	"testing"
 	"time"
@@ -45,8 +46,8 @@ func (p *ProductEntity) BeforeDelete(tx *gorm.DB) error {
 	return nil
 }
 
-func CreateRepository[E any](db *gorm.DB) *PSqlRepository[E] {
-	repo := NewRepository[E](db)
+func CreateRepository[E any](db *gorm.DB) *core.PSqlRepository[E] {
+	repo := core.NewPSQLRepository[E](db)
 	return repo
 }
 
@@ -157,16 +158,17 @@ func TestFindOneAndUpdateOrInsert(t *testing.T) {
 		Name: "test 2023",
 	})
 
-	updateOrInsertData := UpdateOrInsert[ProductEntity]{
-		replaceData: &ProductEntity{
-			Name: "test updated 2023",
-		},
-		newData: &ProductEntity{
+	updateOrInsertData := core.UpdateOrInsert[ProductEntity]{
+		NewData: &ProductEntity{
 			Name:   "test 2023",
 			Weight: 1000,
 		},
+		ReplaceData: &ProductEntity{
+			Name: "test updated 2023",
+		},
 	}
-	data, err := productRepo.FindOneAndUpdateOrInsert(ctx, criteria, updateOrInsertData)
+
+	data, err := productRepo.FindOneAndUpdateOrInsert(ctx, criteria, &updateOrInsertData)
 	if err != nil {
 		panic(err)
 	}

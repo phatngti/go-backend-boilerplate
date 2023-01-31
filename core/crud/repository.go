@@ -1,4 +1,4 @@
-package core
+package core_crud
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type IRepositoryFactory[E any] interface {
 	UpdateById(ctx context.Context, id uint, entity *E) (E, error)
 	Update(ctx context.Context, entity *E, newData *E) (E, error)
 	FindOneAndUpdate(ctx context.Context, criteria map[string]interface{}, entity *E) (E, error)
-	FindOneAndUpdateOrInsert(ctx context.Context, criteria map[string]interface{}, data UpdateOrInsert[E]) (E, error)
+	FindOneAndUpdateOrInsert(ctx context.Context, criteria map[string]interface{}, data *UpdateOrInsert[E]) (E, error)
 	Delete(ctx context.Context, entity *E) error
 }
 

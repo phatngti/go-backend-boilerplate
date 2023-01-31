@@ -8,7 +8,7 @@ import (
 )
 
 func CreatePSQLRepository[E any](db *gorm.DB) *core.PSqlRepository[E] {
-	repo := core.NewRepository[E](db)
+	repo := core.NewPSQLRepository[E](db)
 	return repo
 }
 
